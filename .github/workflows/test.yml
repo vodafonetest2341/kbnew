@@ -1,0 +1,20 @@
+name: test.infrastructure.access.id
+
+on:
+  workflow_dispatch:   
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    environment: dev
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v2
+      - name: 'Azure CLI Login'
+        run: az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+      - name: 'Run az commands'
+        run: |
+          az account show
+          az group list
