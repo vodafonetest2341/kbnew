@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "1nZ9tyXVc/sGq9ZalpfAXD4qV33yHB0lw2vw12AfgaN+XRnv0oyiKaqaMqhjC0TU2f4xHWi5w1dz6k6LKdyiMQ==",
+  "success": true,
+  "projectFilePath": "c:\\Users\\mibhatnagar\\OneDrive - Microsoft\\07_Vodafone\\AIB\\ADO\\Knowledgebase\\sql_store\\sql_Store\\sql_Store.sqlproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\mibhatnagar\\.nuget\\packages\\microsoft.netframework.referenceassemblies\\1.0.0\\microsoft.netframework.referenceassemblies.1.0.0.nupkg.sha512",
+    "C:\\Users\\mibhatnagar\\.nuget\\packages\\microsoft.netframework.referenceassemblies.net46\\1.0.0\\microsoft.netframework.referenceassemblies.net46.1.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,52 @@
+parameters:
+  - name: azureServiceConnection
+    type: string
+  - name: artifactName
+    type: string
+  - name: environmentToDeploy
+    type: string
+  - name: vars
+    type: object
+  - name: artifactsDirectory
+    type: string
+
+jobs:
+  - deployment: DeployFunctionApp
+    displayName: "Deploy Deploy Function App"
+    environment:
+      name: ${{ parameters.environmentToDeploy }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+            - task: Docker@2
+              displayName: Build and publish image to Azure Container Registry
+              inputs:
+                command: buildAndPush
+                containerRegistry: ${{ parameters.vars.DockerRegistryServiceConnection }}
+                repository: ${{ parameters.vars.DockerImageRepository }}
+                dockerfile: ${{ parameters.vars.DockerFilePath }}
+            - task: AzureCLI@2
+              displayName: "Add Application Settings"
+              inputs:
+                azureSubscription: ${{ parameters.azureServiceConnection }}
+                scriptType: pscore
+                continueOnError: false
+                failOnStandardError: false
+                powerShellErrorActionPreference: "Stop"
+                scriptLocation: "inlineScript"
+                inlineScript: |
+                  az functionapp config appsettings set `
+                  --name ${{ parameters.vars.FunctionAppName }} `
+                  --resource-group ${{ parameters.vars.ResourceGroupName }} `
+                  --settings FUNCTIONS_WORKER_RUNTIME=python
+                  az functionapp config appsettings set `
+                  --name ${{ parameters.vars.FunctionAppName }} `
+                  --resource-group ${{ parameters.vars.ResourceGroupName }} `
+                  --settings BUILD_ID=$(Build.BuildId)
+            - task: AzureFunctionAppContainer@1 # Add this at the end of your file
+              inputs:
+                azureSubscription: ${{ parameters.azureServiceConnection }}
+                appName: ${{ parameters.vars.FunctionAppName }}
+                imageName: ${{ parameters.vars.ContainerRegistryName }}.azurecr.io/${{ parameters.vars.DockerImageRepository }}:$(build.buildId)

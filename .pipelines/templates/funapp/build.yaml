@@ -1,0 +1,80 @@
+parameters:
+  - name: azureServiceConnection
+    type: string
+  - name: artifactName
+    type: string
+  - name: keyVaultUrl
+    type: string
+
+jobs:
+  - job: BuildAndTest
+    displayName: Build and Test
+    steps:
+      - task: UsePythonVersion@0
+        displayName: "Use Python 3.10"
+        inputs:
+          versionSpec: 3.10
+          disableDownloadFromRegistry: true
+      - script: |
+          cd azure_functions
+          # pip3 install -r requirements-dev.txt
+          # pip3 install -r requirements.txt
+        displayName: "Install requirements"
+
+      - task: PowerShell@2
+        displayName: "Run Bandit Checks"
+        inputs:
+          continueOnError: false
+          failOnStandardError: false
+          errorActionPreference: stop
+          targetType: inline
+          script: |
+            cd azure_functions
+            $env:PYTHONPATH += ";$(System.DefaultWorkingDirectory)"            
+            bandit -r function_app.py
+            bandit -r src
+            bandit -r tests --skip B101 # skip assert checks in the tests folder
+      - task: PowerShell@2
+        displayName: "Run PyCodeStyle Checks"
+        inputs:
+          continueOnError: false
+          failOnStandardError: false
+          errorActionPreference: stop
+          targetType: inline
+          script: |
+            cd azure_functions
+            $env:PYTHONPATH += ";$(System.DefaultWorkingDirectory)"            
+            pycodestyle function_app.py --ignore=E501,W503,E203
+            pycodestyle common --ignore=E501,W503,E203
+            pycodestyle helpers --ignore=E501,W503,E203
+            pycodestyle shared --ignore=E501,W503,E203
+            pycodestyle tests --ignore=E501,W503,E203
+      - task: AzureCLI@2
+        displayName: "Run Unit Tests and Code Coverage"
+        inputs:
+          azureSubscription: ${{ parameters.azureServiceConnection }}
+          scriptType: pscore
+          continueOnError: false
+          failOnStandardError: false
+          powerShellErrorActionPreference: "Stop"
+          scriptLocation: "inlineScript"
+          inlineScript: |
+            cd azure_functions
+            $env:PYTHONPATH += ";$(System.DefaultWorkingDirectory)"
+            $env:KEY_VAULT_URL = "${{ parameters.keyVaultUrl }}"
+            $env:FUNCTION_APP_KEY_NAME = "function-app-key"
+            coverage run --rcfile=.coveragerc -m behave tests --junit --junit-directory $(System.DefaultWorkingDirectory)/reports/tabular
+            coverage xml -o $(System.DefaultWorkingDirectory)/coverage.xml
+      - task: PublishTestResults@2
+        inputs:
+          testResultsFormat: "JUnit"
+          testResultsFiles: "$(System.DefaultWorkingDirectory)/reports/**/TESTS-*.xml"
+          failTaskOnFailedTests: true
+          failTaskOnMissingResultsFile: true
+      - task: UseDotNet@2
+        displayName: 'Use .NET Core sdk 7.0.x'
+        inputs:
+          version: 7.0.x          
+      - task: PublishCodeCoverageResults@2
+        inputs:          
+          summaryFileLocation: $(System.DefaultWorkingDirectory)/coverage.xml

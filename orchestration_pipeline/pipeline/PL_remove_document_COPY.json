@@ -1,0 +1,178 @@
+{
+	"name": "PL_remove_document_COPY",
+	"properties": {
+		"description": "This will remove the document record from the sql content store - Document Table and remove document from storage account (adls gen2)",
+		"activities": [
+			{
+				"name": "Check if record exists in metadata document",
+				"description": "Check and compare the details ",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('Select count(*) as cnt from [knowledgebase].[Document] where Destination ='''\n,pipeline().parameters.container\n,'/'\n,pipeline().parameters.directory\n,'/'\n,pipeline().parameters.filePath\n,'''')\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "00:30:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_sql_document_data",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "If Document Not Exists",
+				"description": "If metadata don't match i.e. destination filepath ",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check if record exists in metadata document",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Check if record exists in metadata document').output.firstRow['cnt'],0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Remove Document",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.00:30:00",
+								"retry": 3,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[knowledgebase].[RemoveDocument]",
+								"storedProcedureParameters": {
+									"container": {
+										"value": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"directory": {
+										"value": {
+											"value": "@pipeline().parameters.directory",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"filePath": {
+										"value": {
+											"value": "@pipeline().parameters.filePath",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_sql_store",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "PL_delete_files_adls_storage",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Remove Document",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_delete_files_adls_storage",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Wait1",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"variables": {
+			"v_documentStatus": {
+				"type": "String",
+				"defaultValue": "Draft"
+			},
+			"v_pipelineStatus": {
+				"type": "String",
+				"defaultValue": "Success"
+			}
+		},
+		"folder": {
+			"name": "utility"
+		},
+		"annotations": []
+	}
+}

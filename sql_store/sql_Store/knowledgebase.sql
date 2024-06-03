@@ -1,0 +1,4 @@
+CREATE SCHEMA [knowledgebase]
+   
+GO
+

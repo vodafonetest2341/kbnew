@@ -1,0 +1,319 @@
+{
+	"name": "PL_rag_wf_CreateIndex",
+	"properties": {
+		"activities": [
+			{
+				"name": "Azure Function Create Index",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.01:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": {
+						"value": "createIndexes",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('{','\"','containerFilePath','\"',':','\"',pipeline().parameters.container, '/', pipeline().parameters.directory, '/', pipeline().parameters.filePath,'\"',\n'}')",
+						"type": "Expression"
+					},
+					"method": "POST"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_azure_func",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Switch Cases",
+				"description": "Case success : SQL content clear, update document status, delete file from adls\nFail : If Get content failed, call failure pipeline\nDefault : call failure pipeline",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Azure Function Create Index",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@if(equals(activity('Azure Function Create Index').output.Code,200),\n'success',\n'fail')",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "success",
+							"activities": [
+								{
+									"name": "Delete SQL Content",
+									"type": "ExecutePipeline",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_delete_data_sql_content",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"directory": {
+												"value": "@pipeline().parameters.directory",
+												"type": "Expression"
+											},
+											"filePath": {
+												"value": "@pipeline().parameters.filePath",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "PL_delete_files_adls_storage",
+									"type": "ExecutePipeline",
+									"state": "Inactive",
+									"onInactiveMarkAs": "Succeeded",
+									"dependsOn": [
+										{
+											"activity": "Update Document Status",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_delete_files_adls_storage",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"directory": {
+												"value": "@pipeline().parameters.directory",
+												"type": "Expression"
+											},
+											"filePath": {
+												"value": "@pipeline().parameters.filePath",
+												"type": "Expression"
+											}
+										}
+									}
+								},
+								{
+									"name": "Update Document Status",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [
+										{
+											"activity": "Delete SQL Content",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"policy": {
+										"timeout": "0.00:30:00",
+										"retry": 3,
+										"retryIntervalInSeconds": 60,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[knowledgebase].[UpdateDocumentStatus]",
+										"storedProcedureParameters": {
+											"container": {
+												"value": {
+													"value": "@pipeline().parameters.container",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"directory": {
+												"value": {
+													"value": "@pipeline().parameters.directory",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"filePath": {
+												"value": {
+													"value": "@pipeline().parameters.filePath",
+													"type": "Expression"
+												},
+												"type": "String"
+											},
+											"Status": {
+												"value": {
+													"value": "Completed",
+													"type": "Expression"
+												},
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "LS_sql_store",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						},
+						{
+							"value": "fail",
+							"activities": [
+								{
+									"name": "Execute Pipeline Fail",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_wf_failures",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"directory": {
+												"value": "@pipeline().parameters.directory",
+												"type": "Expression"
+											},
+											"filePath": {
+												"value": "@pipeline().parameters.filePath",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "Execute Pipeline Fail Default",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_wf_failures",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "PL_wf_failures",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Azure Function Create Index",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_wf_failures",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"directory": {
+							"value": "@pipeline().parameters.directory",
+							"type": "Expression"
+						},
+						"filePath": {
+							"value": "@pipeline().parameters.filePath",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"variables": {
+			"v_documentStatusCompleted": {
+				"type": "String",
+				"defaultValue": "Completed"
+			},
+			"v_documentStatusFailed": {
+				"type": "String",
+				"defaultValue": "Failed"
+			}
+		},
+		"annotations": []
+	}
+}

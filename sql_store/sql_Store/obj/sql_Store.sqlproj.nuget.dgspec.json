@@ -1,0 +1,50 @@
+{
+  "format": 1,
+  "restore": {
+    "c:\\Users\\mibhatnagar\\OneDrive - Microsoft\\07_Vodafone\\AIB\\ADO\\Knowledgebase\\sql_store\\sql_Store\\sql_Store.sqlproj": {}
+  },
+  "projects": {
+    "c:\\Users\\mibhatnagar\\OneDrive - Microsoft\\07_Vodafone\\AIB\\ADO\\Knowledgebase\\sql_store\\sql_Store\\sql_Store.sqlproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "c:\\Users\\mibhatnagar\\OneDrive - Microsoft\\07_Vodafone\\AIB\\ADO\\Knowledgebase\\sql_store\\sql_Store\\sql_Store.sqlproj",
+        "projectName": "sql_Store",
+        "projectPath": "c:\\Users\\mibhatnagar\\OneDrive - Microsoft\\07_Vodafone\\AIB\\ADO\\Knowledgebase\\sql_store\\sql_Store\\sql_Store.sqlproj",
+        "packagesPath": "C:\\Users\\mibhatnagar\\.nuget\\packages\\",
+        "outputPath": "c:\\Users\\mibhatnagar\\OneDrive - Microsoft\\07_Vodafone\\AIB\\ADO\\Knowledgebase\\sql_store\\sql_Store\\obj\\",
+        "projectStyle": "PackageReference",
+        "skipContentFileWrite": true,
+        "configFilePaths": [
+          "C:\\Users\\mibhatnagar\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net46"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net46": {
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "noWarn": [
+            "NU5128"
+          ]
+        }
+      },
+      "frameworks": {
+        "net46": {
+          "dependencies": {
+            "Microsoft.NETFramework.ReferenceAssemblies": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[1.0.0, )"
+            }
+          }
+        }
+      }
+    }
+  }
+}

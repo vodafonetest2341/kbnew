@@ -1,0 +1,64 @@
+{
+	"name": "DS_sql_config",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_sql_store",
+			"type": "LinkedServiceReference"
+		},
+		"folder": {
+			"name": "metadata"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "ID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Name",
+				"type": "varchar"
+			},
+			{
+				"name": "Version",
+				"type": "varchar"
+			},
+			{
+				"name": "CheckSum",
+				"type": "varchar"
+			},
+			{
+				"name": "Datasource",
+				"type": "varchar"
+			},
+			{
+				"name": "Destination",
+				"type": "varchar"
+			},
+			{
+				"name": "LastDownloadedTime",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "AccessRights",
+				"type": "varchar"
+			},
+			{
+				"name": "Status",
+				"type": "varchar"
+			},
+			{
+				"name": "Classification",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "knowledgebase",
+			"table": "Config"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

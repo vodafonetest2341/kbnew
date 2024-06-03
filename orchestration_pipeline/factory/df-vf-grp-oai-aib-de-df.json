@@ -1,0 +1,14 @@
+{
+	"name": "df-vf-grp-oai-aib-de-df",
+	"properties": {
+		"globalConfigurations": {
+			"PipelineBillingEnabled": "true"
+		}
+	},
+	"location": "germanywestcentral",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "c9e78d13-6e18-4160-ab4e-51eccea036ea",
+		"tenantId": "68283f3b-8487-4c86-adb3-a5228f18b893"
+	}
+}

@@ -1,0 +1,10 @@
+{
+	"name": "LS_key_vault",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://kv-vf-grp-oai-aib-kv-02.vault.azure.net/"
+		}
+	}
+}

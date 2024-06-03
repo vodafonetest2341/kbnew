@@ -1,0 +1,484 @@
+{
+	"name": "PL_rag_wf",
+	"properties": {
+		"activities": [
+			{
+				"name": "If Validation Failed",
+				"description": "If metadata in config and adls don't match i.e. destination filepath and checksum(content md5)",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check if file Checksum matches",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Check if file Checksum matches').output.firstRow['cnt'],0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Update Document Status",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Set Document Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.00:30:00",
+								"retry": 3,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[knowledgebase].[UpdateDocumentStatus]",
+								"storedProcedureParameters": {
+									"container": {
+										"value": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"directory": {
+										"value": {
+											"value": "@pipeline().parameters.directory",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"filePath": {
+										"value": {
+											"value": "@pipeline().parameters.filePath",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"Status": {
+										"value": {
+											"value": "@variables('v_documentStatus')",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_sql_store",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Set Document Status",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_documentStatus",
+								"value": {
+									"value": "Validation Successful",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Execute RAG workflow Get Content",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Update Document Status",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_rag_wf_GetContent",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Set Document Status Failed",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_documentStatus",
+								"value": {
+									"value": "Failed At Validation",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "Execute Pipeline Remove File from adls",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Update Document Status with Failed_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_delete_files_adls_storage",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						},
+						{
+							"name": "Update Document Status with Failed_copy1",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "Set Document Status Failed",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.00:30:00",
+								"retry": 3,
+								"retryIntervalInSeconds": 60,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[knowledgebase].[UpdateDocumentStatus]",
+								"storedProcedureParameters": {
+									"container": {
+										"value": {
+											"value": "@pipeline().parameters.container",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"directory": {
+										"value": {
+											"value": "@pipeline().parameters.directory",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"filePath": {
+										"value": {
+											"value": "@pipeline().parameters.filePath",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"Status": {
+										"value": {
+											"value": "@variables('v_documentStatus')",
+											"type": "Expression"
+										},
+										"type": "String"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "LS_sql_store",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "Check if file Checksum matches",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('Select count(*) as cnt from [knowledgebase].[Document]where CheckSum ='''\n,activity('Get Metadata').output.contentMD5\n,'''')",
+							"type": "Expression"
+						},
+						"queryTimeout": "00:30:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_sql_document_data",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Error-Set Document Status Failed",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Check if file Checksum matches",
+						"dependencyConditions": [
+							"Failed"
+						]
+					},
+					{
+						"activity": "If Validation Failed",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_documentStatus",
+					"value": {
+						"value": "Failed At Validation",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Update Document Status with Failed",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Error-Set Document Status Failed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[knowledgebase].[UpdateDocumentStatus]",
+					"storedProcedureParameters": {
+						"container": {
+							"value": {
+								"value": "@pipeline().parameters.container",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"directory": {
+							"value": {
+								"value": "@pipeline().parameters.directory",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"filePath": {
+							"value": {
+								"value": "@pipeline().parameters.filePath",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"Status": {
+							"value": {
+								"value": "@variables('v_documentStatus')",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_sql_store",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "PL_delete_files_adls_storage",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Update Document Status with Failed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_delete_files_adls_storage",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"directory": {
+							"value": "@pipeline().parameters.directory",
+							"type": "Expression"
+						},
+						"filePath": {
+							"value": "@pipeline().parameters.filePath",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "Get Metadata",
+				"description": "Get metadata of the file ingested into landing (adls gen2 container)",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_adls_landing",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": {
+								"value": "@pipeline().parameters.container",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@pipeline().parameters.directory",
+								"type": "Expression"
+							},
+							"filePath": {
+								"value": "@pipeline().parameters.filePath",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"contentMD5",
+						"exists",
+						"itemName"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"variables": {
+			"v_documentStatus": {
+				"type": "String",
+				"defaultValue": "Draft"
+			},
+			"v_pipelineStatus": {
+				"type": "String",
+				"defaultValue": "Success"
+			}
+		},
+		"annotations": []
+	}
+}

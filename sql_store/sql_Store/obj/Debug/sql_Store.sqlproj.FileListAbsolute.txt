@@ -1,0 +1,10 @@
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\bin\Debug\sql_Store.dacpac
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\bin\Debug\sql_Store.dll
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\bin\Debug\sql_Store.pdb
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\sql_Store.sqlproj.AssemblyReference.cache
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\Model.xml
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\refactor.xml
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\postdeploy.sql
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\predeploy.sql
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\sql_Store.dll
+c:\Users\mibhatnagar\OneDrive - Microsoft\07_Vodafone\AIB\ADO\Knowledgebase\sql_store\sql_Store\obj\Debug\sql_Store.pdb

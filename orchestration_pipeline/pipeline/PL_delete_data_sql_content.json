@@ -1,0 +1,72 @@
+{
+	"name": "PL_delete_data_sql_content",
+	"properties": {
+		"description": "This will be called at the end of the RAG WF, Once index will be created, this procedure will delete the document from SQL Content DB(Embedding and Content) and will update the document with Completed Status.",
+		"activities": [
+			{
+				"name": "Delete SQL Content",
+				"description": "This will delete the sql content store - Embedding and Content.",
+				"type": "SqlServerStoredProcedure",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[knowledgebase].[RemoveSQLContent]",
+					"storedProcedureParameters": {
+						"container": {
+							"value": {
+								"value": "@pipeline().parameters.container",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"directory": {
+							"value": {
+								"value": "@pipeline().parameters.directory",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"filePath": {
+							"value": {
+								"value": "@pipeline().parameters.filePath",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_sql_store",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"folder": {
+			"name": "utility"
+		},
+		"annotations": []
+	}
+}

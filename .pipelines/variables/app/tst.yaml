@@ -1,0 +1,19 @@
+variables:
+  # Azure service connection and environment details.
+  AzureServiceConnection: aib-refbuild-bld-svr
+  EnvironmentToDeploy: tst
+
+  ResourceGroupName: rg-vf-grp-oai-aib-de
+  FunctionAppName: af-vf-grp-oai-aib-de-af-02
+  KeyVaultName: kv-vf-grp-oai-aib-kv-02
+
+  DockerRegistryServiceConnection: aib-refbuild-con-reg
+  DockerImageRepository: ragkbfunctionapp
+  DockerFilePath: ./Dockerfile
+
+  AzureSQLServerName: srv-vf-grp-oai-aib-de-srvsql-01
+  AzureSQLServerDBName: sql-vf-grp-oai-aid-sql
+
+  LandingAreaName: savfgrpoaiaibdesa000002
+  DataFactoryName: df-vf-grp-oai-aib-de-df
+  

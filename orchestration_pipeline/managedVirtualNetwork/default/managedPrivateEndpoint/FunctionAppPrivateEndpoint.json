@@ -1,0 +1,7 @@
+{
+	"name": "FunctionAppPrivateEndpoint",
+	"properties": {
+		"privateLinkResourceId": "/subscriptions/6c02b1b8-a778-4737-a789-d493f8e5a049/resourceGroups/rg-vf-grp-oai-aib-de/providers/Microsoft.Web/sites/af-vf-grp-oai-aib-de-af-01",
+		"groupId": "sites"
+	}
+}

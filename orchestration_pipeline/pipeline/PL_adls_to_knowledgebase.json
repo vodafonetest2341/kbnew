@@ -1,0 +1,288 @@
+{
+	"name": "PL_adls_to_knowledgebase",
+	"properties": {
+		"activities": [
+			{
+				"name": "Get Metadata",
+				"description": "Get metadata of the file ingested into landing (adls gen2 container)",
+				"type": "GetMetadata",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"dataset": {
+						"referenceName": "DS_adls_landing",
+						"type": "DatasetReference",
+						"parameters": {
+							"container": {
+								"value": "@pipeline().parameters.container",
+								"type": "Expression"
+							},
+							"directory": {
+								"value": "@pipeline().parameters.directory",
+								"type": "Expression"
+							},
+							"filePath": {
+								"value": "@pipeline().parameters.filePath",
+								"type": "Expression"
+							}
+						}
+					},
+					"fieldList": [
+						"contentMD5",
+						"exists",
+						"itemName"
+					],
+					"storeSettings": {
+						"type": "AzureBlobFSReadSettings",
+						"recursive": true,
+						"enablePartitionDiscovery": false
+					},
+					"formatSettings": {
+						"type": "BinaryReadSettings"
+					}
+				}
+			},
+			{
+				"name": "Check if document exists in metadata",
+				"description": "Check if document exists in metadata",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "Get Metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "@concat('Select count(*) as cnt from [knowledgebase].[Document] where Destination ='''\n,pipeline().parameters.container\n,'/'\n,pipeline().parameters.directory\n,'/'\n,pipeline().parameters.filePath\n,'''')\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "00:30:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "DS_sql_document_data",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Error-Set Document Status Failed",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "Check if document exists in metadata",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_documentStatus",
+					"value": {
+						"value": "Failed At Validation",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "PL_delete_files_adls_storage",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Error-Set Document Status Failed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_delete_files_adls_storage",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"directory": {
+							"value": "@pipeline().parameters.directory",
+							"type": "Expression"
+						},
+						"filePath": {
+							"value": "@pipeline().parameters.filePath",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "If Document Does not exists in metadata",
+				"description": "If Document Does not exists in metadata i.e. Document table",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Check if document exists in metadata",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@equals(activity('Check if document exists in metadata').output.firstRow['cnt'],0)",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Execute Pipeline After Document verification",
+							"description": "Initiate checksum and RAG wf",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_rag_wf",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "Error-Set Document Status Failed_copy1",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"policy": {
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "v_documentStatus",
+								"value": {
+									"value": "Document doesn't exists in metadata.",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "PL_delete_files_adls_storage_copy1",
+							"type": "ExecutePipeline",
+							"dependsOn": [
+								{
+									"activity": "Error-Set Document Status Failed_copy1",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_delete_files_adls_storage",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"variables": {
+			"v_documentStatus": {
+				"type": "String",
+				"defaultValue": "Draft"
+			},
+			"v_pipelineStatus": {
+				"type": "String",
+				"defaultValue": "Success"
+			}
+		},
+		"folder": {
+			"name": "orchestration"
+		},
+		"annotations": []
+	}
+}

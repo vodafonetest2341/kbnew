@@ -1,0 +1,186 @@
+{
+	"name": "PL_wf_failures",
+	"properties": {
+		"activities": [
+			{
+				"name": "Update Document Status with Failed",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [
+					{
+						"activity": "Delete SQL Content",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.00:30:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[knowledgebase].[UpdateDocumentStatus]",
+					"storedProcedureParameters": {
+						"container": {
+							"value": {
+								"value": "@pipeline().parameters.container",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"directory": {
+							"value": {
+								"value": "@pipeline().parameters.directory",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"filePath": {
+							"value": {
+								"value": "@pipeline().parameters.filePath",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"Status": {
+							"value": {
+								"value": "@variables('v_documentStatus')",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_sql_store",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Set Document Status Failed",
+				"type": "SetVariable",
+				"dependsOn": [],
+				"policy": {
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "v_documentStatus",
+					"value": {
+						"value": "Failed",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Delete SQL Content",
+				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "Set Document Status Failed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_delete_data_sql_content",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"directory": {
+							"value": "@pipeline().parameters.directory",
+							"type": "Expression"
+						},
+						"filePath": {
+							"value": "@pipeline().parameters.filePath",
+							"type": "Expression"
+						}
+					}
+				}
+			},
+			{
+				"name": "PL_delete_files_adls_storage",
+				"type": "ExecutePipeline",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "Update Document Status with Failed",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_delete_files_adls_storage",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"directory": {
+							"value": "@pipeline().parameters.directory",
+							"type": "Expression"
+						},
+						"filePath": {
+							"value": "@pipeline().parameters.filePath",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"variables": {
+			"v_documentStatus": {
+				"type": "String",
+				"defaultValue": "Failed"
+			},
+			"v_pipelineStatus": {
+				"type": "String"
+			}
+		},
+		"folder": {
+			"name": "utility"
+		},
+		"annotations": []
+	}
+}

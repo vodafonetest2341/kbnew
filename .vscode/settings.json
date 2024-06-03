@@ -1,0 +1,29 @@
+{
+    // "workbench.sideBar.location": "right",
+    "extensions.ignoreRecommendations": false,
+    "black-formatter.args": [
+        "--line-length",
+        "88"
+    ],
+    "isort.args": [
+        "--profile",
+        "black"
+    ],
+    "flake8.args": [
+        "--max-line-length",
+        "88",
+        "--extend-ignore",
+        "E203"
+    ],
+    "notebook.formatOnSave.enabled": true,
+    "notebook.codeActionsOnSave": {
+        "notebook.source.organizeImports": "explicit"
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        },
+    }
+}

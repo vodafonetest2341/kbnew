@@ -1,0 +1,15 @@
+{
+	"name": "LS_adls_knowledge_base",
+	"properties": {
+		"annotations": [],
+		"type": "AzureBlobFS",
+		"typeProperties": {
+			"url": "https://savfgrpoaiaibdesa000002.dfs.core.windows.net/"
+		},
+		"connectVia": {
+			"referenceName": "ManagedVNetIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

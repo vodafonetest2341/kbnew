@@ -1,0 +1,77 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop      
+  paths:
+    include:
+      - .pipelines/templates/funapp/build.yaml
+      - .pipelines/templates/funapp/deploy.yaml
+      - .pipelines/variables/app/
+      - .pipelines/fnapp.yaml
+      - azure_functions
+
+name: Build and deploy function app
+
+pool: aib-refbuild
+
+stages:
+  - stage: buildandtest
+    displayName: Build and Test
+    variables:
+      - template: ./variables/app/common.yaml
+      - template: ./variables/app/dev.yaml
+    jobs:
+      - template: templates/funapp/build.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: ${{ variables.BuildArtifactName }}
+          keyVaultUrl: https://${{ variables.KeyVaultName }}.vault.azure.net/
+  - stage: deploytodev
+    displayName: Deploy and Create Azure Functions in Dev
+    dependsOn: buildandtest
+    condition: |
+      and(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), succeeded())
+    variables:
+      - template: ./variables/app/common.yaml
+      - template: ./variables/app/dev.yaml
+    jobs:
+      - template: templates/funapp/deploy.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: ${{ variables.BuildArtifactName }}
+          environmentToDeploy: ${{ variables.EnvironmentToDeploy }}
+          vars: ${{ variables }}
+          artifactsDirectory: $(System.ArtifactsDirectory)/${{ variables.BuildArtifactName }}
+  - stage: deploytotst
+    displayName: Deploy and Create Azure Functions in Test
+    dependsOn: buildandtest
+    condition: |
+      and(eq(variables['Build.SourceBranch'], 'refs/heads/main'), succeeded())
+    variables:
+      - template: ./variables/app/common.yaml
+      - template: ./variables/app/tst.yaml
+    jobs:
+      - template: templates/funapp/deploy.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: ${{ variables.BuildArtifactName }}
+          environmentToDeploy: ${{ variables.environmentToDeploy }}
+          vars: ${{ variables }}
+          artifactsDirectory: $(System.ArtifactsDirectory)/${{ variables.BuildArtifactName }}
+  - stage: deploytoprd
+    displayName: Deploy and Create Azure Functions in Production
+    dependsOn: deploytotst
+    condition: |
+      and(eq(variables['Build.SourceBranch'], 'refs/heads/main'), succeeded())
+    variables:
+      - template: ./variables/app/common.yaml
+      - template: ./variables/app/prd.yaml
+    jobs:
+      - template: templates/funapp/deploy.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: ${{ variables.BuildArtifactName }}
+          environmentToDeploy: ${{ variables.environmentToDeploy }}
+          vars: ${{ variables }}
+          artifactsDirectory: $(System.ArtifactsDirectory)/${{ variables.BuildArtifactName }}

@@ -1,0 +1,49 @@
+parameters:
+  - name: azureServiceConnection
+    type: string
+  - name: artifactName
+    type: string
+  - name: environmentToDeploy
+    type: string
+  - name: vars
+    type: object
+
+jobs:
+  - deployment: DeployAdfArtifacts
+    displayName: "Deploy Adf Artifacts"
+    environment:
+      name: ${{ parameters.environmentToDeploy }}
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+            - checkout: self
+              displayName: "Checkout Repository"
+              clean: true
+            - task: AzureCLI@2
+              displayName: "Prepare Adf Artifacts"
+              inputs:
+                azureSubscription: ${{ parameters.azureServiceConnection }}
+                scriptType: pscore
+                scriptLocation: "scriptPath"
+                scriptPath: $(System.DefaultWorkingDirectory)/.pipelines/scripts/prepare_adf.ps1
+                arguments:
+                  > # Use this to avoid newline characters in multiline string
+                  -ResourceGroupName "${{ parameters.vars.ResourceGroupName }}"
+                  -DataFactoryName "${{ parameters.vars.DataFactoryName }}"
+                  -LandingAreaName "${{ parameters.vars.LandingAreaName }}"
+                  -KeyVaultName "${{ parameters.vars.KeyVaultName }}"
+                  -SQLServerName "${{ parameters.vars.AzureSQLServerName }}"
+                  -SQLDatabaseName "${{ parameters.vars.AzureSQLServerDBName }}"
+                  -FunctionAppName "${{ parameters.vars.FunctionAppName }}"
+            - task: AzureCLI@2
+              displayName: "Deploy Adf Artifacts"
+              inputs:
+                azureSubscription: ${{ parameters.azureServiceConnection }}
+                scriptType: pscore
+                scriptLocation: "scriptPath"
+                scriptPath: $(System.DefaultWorkingDirectory)/.pipelines/scripts/deploy_adf.ps1
+                arguments:
+                  > # Use this to avoid newline characters in multiline string
+                  -ResourceGroupName "${{ parameters.vars.ResourceGroupName }}"
+                  -DataFactoryName "${{ parameters.vars.DataFactoryName }}"

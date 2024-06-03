@@ -1,0 +1,9 @@
+[run]
+include =
+    ./function_app.py
+    ./common/*
+    ./helpers/*
+    ./shared/*
+    ./tests/*
+    
+    

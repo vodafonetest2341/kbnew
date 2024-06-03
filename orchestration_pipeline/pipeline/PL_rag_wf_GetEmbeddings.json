@@ -1,0 +1,221 @@
+{
+	"name": "PL_rag_wf_GetEmbeddings",
+	"properties": {
+		"activities": [
+			{
+				"name": "Azure Function Get Embeddings",
+				"type": "AzureFunctionActivity",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.01:00:00",
+					"retry": 3,
+					"retryIntervalInSeconds": 60,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"functionName": {
+						"value": "getEmbeddings",
+						"type": "Expression"
+					},
+					"body": {
+						"value": "@concat('{','\"','containerFilePath','\"',':','\"',pipeline().parameters.container, '/', pipeline().parameters.directory, '/', pipeline().parameters.filePath,'\"',\n'}')",
+						"type": "Expression"
+					},
+					"method": "POST"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_azure_func",
+					"type": "LinkedServiceReference"
+				}
+			},
+			{
+				"name": "Switch Cases",
+				"description": "Case PII : If Get content succeeded and PII required.\nCase Embedding : If Get content succeeded and PII not required.\nFail :If Get content failed",
+				"type": "Switch",
+				"dependsOn": [
+					{
+						"activity": "Azure Function Get Embeddings",
+						"dependencyConditions": [
+							"Completed"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"on": {
+						"value": "@if(equals(activity('Azure Function Get Embeddings').output.Code,200),\n'index',\n'fail')",
+						"type": "Expression"
+					},
+					"cases": [
+						{
+							"value": "index",
+							"activities": [
+								{
+									"name": "Execute Pipeline Create Index",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_rag_wf_CreateIndex",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"directory": {
+												"value": "@pipeline().parameters.directory",
+												"type": "Expression"
+											},
+											"filePath": {
+												"value": "@pipeline().parameters.filePath",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						},
+						{
+							"value": "fail",
+							"activities": [
+								{
+									"name": "Execute Pipeline Fail",
+									"type": "ExecutePipeline",
+									"dependsOn": [],
+									"policy": {
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"pipeline": {
+											"referenceName": "PL_wf_failures",
+											"type": "PipelineReference"
+										},
+										"waitOnCompletion": true,
+										"parameters": {
+											"container": {
+												"value": "@pipeline().parameters.container",
+												"type": "Expression"
+											},
+											"directory": {
+												"value": "@pipeline().parameters.directory",
+												"type": "Expression"
+											},
+											"filePath": {
+												"value": "@pipeline().parameters.filePath",
+												"type": "Expression"
+											}
+										}
+									}
+								}
+							]
+						}
+					],
+					"defaultActivities": [
+						{
+							"name": "Execute Pipeline Fail Default",
+							"type": "ExecutePipeline",
+							"dependsOn": [],
+							"policy": {
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"pipeline": {
+									"referenceName": "PL_wf_failures",
+									"type": "PipelineReference"
+								},
+								"waitOnCompletion": true,
+								"parameters": {
+									"container": {
+										"value": "@pipeline().parameters.container",
+										"type": "Expression"
+									},
+									"directory": {
+										"value": "@pipeline().parameters.directory",
+										"type": "Expression"
+									},
+									"filePath": {
+										"value": "@pipeline().parameters.filePath",
+										"type": "Expression"
+									}
+								}
+							}
+						}
+					]
+				}
+			},
+			{
+				"name": "PL_wf_failures",
+				"type": "ExecutePipeline",
+				"dependsOn": [
+					{
+						"activity": "Azure Function Get Embeddings",
+						"dependencyConditions": [
+							"Failed"
+						]
+					}
+				],
+				"policy": {
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_wf_failures",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": true,
+					"parameters": {
+						"container": {
+							"value": "@pipeline().parameters.container",
+							"type": "Expression"
+						},
+						"directory": {
+							"value": "@pipeline().parameters.directory",
+							"type": "Expression"
+						},
+						"filePath": {
+							"value": "@pipeline().parameters.filePath",
+							"type": "Expression"
+						}
+					}
+				}
+			}
+		],
+		"parameters": {
+			"container": {
+				"type": "string",
+				"defaultValue": "landing"
+			},
+			"directory": {
+				"type": "string",
+				"defaultValue": "sharepoint"
+			},
+			"filePath": {
+				"type": "string",
+				"defaultValue": "PerksPlus.pdf"
+			}
+		},
+		"variables": {
+			"v_documentStatusCompleted": {
+				"type": "String",
+				"defaultValue": "Completed"
+			},
+			"v_documentStatusFailed": {
+				"type": "String",
+				"defaultValue": "Failed"
+			}
+		},
+		"annotations": []
+	}
+}

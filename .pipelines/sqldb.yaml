@@ -1,0 +1,83 @@
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+  paths:
+    include:
+      - .pipelines/templates/sql/deploy.yaml
+      - .pipelines/variables/app/
+      - sql_content_store
+
+name: Build and Deploy Database
+
+pool: aib-refbuild
+
+stages:
+  - stage: build
+    displayName: "Build Database"
+    jobs:
+      - job: BuildApplicationDatabase
+        displayName: "Build Database"
+        steps:
+          - task: PowerShell@2
+            displayName: Build the SQL Project
+            inputs:
+              continueOnError: false
+              failOnStandardError: false
+              errorActionPreference: stop
+              targetType: inline
+              script: |
+                dotnet build --configuration Release ./sql_store/sql_Store/sql_Store.sqlproj
+          - task: CopyFiles@2
+            displayName: "Copy dacpac to staging directory"
+            inputs:
+              contents: '**/bin/Release/*.dacpac'
+              targetFolder: $(Build.ArtifactStagingDirectory)
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish dacpac artifact"
+            inputs:
+              pathToPublish: $(Build.ArtifactStagingDirectory)
+              artifactName: dacpac
+  - stage: deploytodev
+    displayName: "Deploy Database To Dev"
+    dependsOn: build
+    condition: |
+      and(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), succeeded())
+    variables:
+      - template: ./variables/app/dev.yaml
+    jobs:
+      - template: templates/sql/deploy.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: dacpac
+          environmentToDeploy: ${{ variables.EnvironmentToDeploy }}
+          vars: ${{ variables }}
+  - stage: deploytotst
+    displayName: "Deploy Database To Test"
+    dependsOn: build
+    condition: |
+      and(eq(variables['Build.SourceBranch'], 'refs/heads/main'), succeeded())
+    variables:
+      - template: ./variables/app/tst.yaml
+    jobs:
+      - template: templates/sql/deploy.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: dacpac
+          environmentToDeploy: ${{ variables.EnvironmentToDeploy }}
+          vars: ${{ variables }}
+  - stage: deploytouat
+    displayName: "Deploy Database To Production"
+    dependsOn: deploytotst
+    condition: |
+      and(eq(variables['Build.SourceBranch'], 'refs/heads/main'), succeeded())
+    variables:
+      - template: ./variables/app/prd.yaml
+    jobs:
+      - template: templates/sql/deploy.yaml
+        parameters:
+          azureServiceConnection: ${{ variables.AzureServiceConnection }}
+          artifactName: dacpac
+          environmentToDeploy: ${{ variables.EnvironmentToDeploy }}
+          vars: ${{ variables }}

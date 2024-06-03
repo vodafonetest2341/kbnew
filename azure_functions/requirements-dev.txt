@@ -1,0 +1,4 @@
+bandit==1.7.6
+pycodestyle==2.11.1
+behave==1.2.6
+coverage==7.3.2

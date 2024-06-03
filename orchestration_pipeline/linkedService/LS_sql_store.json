@@ -1,0 +1,15 @@
+{
+	"name": "LS_sql_store",
+	"properties": {
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=srv-vf-grp-oai-aib-de-srvsql-01.database.windows.net;Initial Catalog=sql-vf-grp-oai-aid-sql"
+		},
+		"connectVia": {
+			"referenceName": "ManagedVNetIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/linkedservices"
+}

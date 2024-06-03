@@ -1,0 +1,26 @@
+{
+	"name": "LS_azure_func",
+	"properties": {
+		"annotations": [],
+		"type": "AzureFunction",
+		"typeProperties": {
+			"functionAppUrl": "https://af-vf-grp-oai-aib-de-af-01.azurewebsites.net",
+			"functionKey": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_key_vault",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": {
+					"value": "af-vf-grp-oai-aib-de-af-01-function-app-key",
+					"type": "Expression"
+				}
+			},
+			"authentication": "Anonymous"
+		},
+		"connectVia": {
+			"referenceName": "ManagedVNetIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
