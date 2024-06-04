@@ -13,7 +13,7 @@ jobs:
       - name: 'Checkout code'
         uses: actions/checkout@v2
       - name: 'Azure CLI Login'
-        run: az login --identity
+        run: az login --identity --allow-no-subscriptions
       - name: 'Run az commands'
         run: |
           az account show
