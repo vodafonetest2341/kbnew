@@ -21,7 +21,7 @@ jobs:
             echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
             echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
             echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
-            echo "KeyVaultUrl=https://kv-vf-grp-oai-aib-kv-02.vault.azure.net/" >> $GITHUB_ENV
+            echo "KeyVaultUrl=https:https://asddf.vault.azure.net/" >> $GITHUB_ENV
             echo "DockerRegistryServiceConnection=aib-refbuild-con-reg" >> $GITHUB_ENV
             echo "DockerImageRepository=ragkbfunctionapp" >> $GITHUB_ENV
             echo "DockerFilePath=./azure_functions/Dockerfile" >> $GITHUB_ENV
