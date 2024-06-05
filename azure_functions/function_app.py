@@ -4,17 +4,13 @@ import sys
 from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
 from helpers.orchestrator import Orchestrator
 
-
 # Set up logging
 logging.basicConfig(filename='app.log', level=logging.INFO,
                     format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(
-    logging.WARNING)
-
+logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
-
 
 @app.route(route="getContent", methods=['GET'])
 def getContent(req: func.HttpRequest) -> func.HttpResponse:
