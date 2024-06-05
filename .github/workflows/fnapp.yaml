@@ -1,12 +1,15 @@
 name: Build and Deploy Function App
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
       - develop
     paths:
-      - 'azure_functions'
+      - '.github/workflows/build.yaml'
+      - '.github/workflows/deploy.yaml'
+      - 'azure_functions/**'
 
 jobs:
   buildandtest:
