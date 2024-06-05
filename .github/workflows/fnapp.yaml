@@ -1,0 +1,140 @@
+name: Build and Deploy Function App
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - '.github/workflows/build.yaml'
+      - '.github/workflows/deploy.yaml'
+      - 'azure_functions'
+
+jobs:
+  buildandtest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
+            echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
+            echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
+            echo "KeyVaultUrl=https://kv-vf-grp-oai-aib-kv-02.vault.azure.net/" >> $GITHUB_ENV
+            echo "DockerRegistryServiceConnection=aib-refbuild-con-reg" >> $GITHUB_ENV
+            echo "DockerImageRepository=ragkbfunctionapp" >> $GITHUB_ENV
+            echo "DockerFilePath=./azure_functions/Dockerfile" >> $GITHUB_ENV
+            echo "ContainerRegistryName=crvfgrpoaiaibdecr000001" >> $GITHUB_ENV
+            echo "AzureSQLServerName=srv-vf-grp-oai-aib-de-srvsql-01.database.windows.net" >> $GITHUB_ENV
+            echo "AzureSQLServerDBName=sql-vf-grp-oai-aid-sql" >> $GITHUB_ENV
+            echo "LandingAreaName=savfgrpoaiaibdesa000002" >> $GITHUB_ENV
+            echo "DataFactoryName=df-vf-grp-oai-aib-de-df" >> $GITHUB_ENV
+            # Add the rest of the dev variables here
+          fi
+
+      - name: Run build and test job
+        uses: ./.github/actions/build-action
+        if: github.ref == 'refs/heads/develop'
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-artifact
+          path: ${{ github.workspace }}/build-artifact
+
+      - name: Save build artifacts
+        run: cp -r build-artifact /path/to/shared/filesystem
+
+  deploytodev:
+    needs: buildandtest
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Load build artifacts
+        run: cp -r /path/to/shared/filesystem build-artifact
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artifact
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+            echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
+            echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
+            echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
+            echo "KeyVaultUrl=https://kv-vf-grp-oai-aib-kv-02.vault.azure.net/" >> $GITHUB_ENV
+            echo "DockerRegistryServiceConnection=aib-refbuild-con-reg" >> $GITHUB_ENV
+            echo "DockerImageRepository=ragkbfunctionapp" >> $GITHUB_ENV
+            echo "DockerFilePath=./azure_functions/Dockerfile" >> $GITHUB_ENV
+            echo "ContainerRegistryName=crvfgrpoaiaibdecr000001" >> $GITHUB_ENV
+            echo "AzureSQLServerName=srv-vf-grp-oai-aib-de-srvsql-01.database.windows.net" >> $GITHUB_ENV
+            echo "AzureSQLServerDBName=sql-vf-grp-oai-aid-sql" >> $GITHUB_ENV
+            echo "LandingAreaName=savfgrpoaiaibdesa000002" >> $GITHUB_ENV
+            echo "DataFactoryName=df-vf-grp-oai-aib-de-df" >> $GITHUB_ENV
+            # Add the rest of the dev variables here
+          fi
+
+      - name: Run deploy to dev job
+        uses: ./.github/actions/deploy-action
+
+  deploytotst:
+    needs: buildandtest
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Load build artifacts
+        run: cp -r /path/to/shared/filesystem build-artifact
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artifact
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "EnvironmentToDeploy=tst" >> $GITHUB_ENV
+            echo "ResourceGroupName=rg-vf-grp-oai-aib-tst" >> $GITHUB_ENV
+            # Add the rest of the tst variables here
+          fi
+
+      - name: Run deploy to tst job
+        uses: ./.github/actions/deploy-action
+
+  deploytoprd:
+    needs: deploytotst
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+     
+      - name: Load build artifacts
+        run: cp -r /path/to/shared/filesystem build-artifact
+
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: build-artifact
+
+      - name: Set environment variables
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "EnvironmentToDeploy=prd" >> $GITHUB_ENV
+            echo "ResourceGroupName=rg-vf-grp-oai-aib-prd" >> $GITHUB_ENV
+            # Add the rest of the prd variables here
+          fi
+
+      - name: Run deploy to prd job
+        uses: ./.github/actions/deploy-action
