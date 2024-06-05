@@ -95,8 +95,12 @@ runs:
       run: pip install azure-identity
       shell: bash
       
-    - name: Install azure-ai package
-      run: pip install azure-ai
+    - name: Install azure-ai-textanalytics package
+     run: pip install azure-ai-textanalytics
+     shell: bash
+
+    - name: Install other azure-ai packages if needed
+      run: pip install azure-ai-formrecognizer azure-ai-language
       shell: bash
     
     - name: Run Unit Tests and Code Coverage
