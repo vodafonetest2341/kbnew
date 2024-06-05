@@ -95,6 +95,10 @@ runs:
       run: pip install azure-identity
       shell: bash
       
+    - name: Install azure-ai-formrecognizer package
+      run: pip install azure-ai-formrecognizer
+      shell: bash
+      
     - name: Run Unit Tests and Code Coverage
       run: |
         cd azure_functions
