@@ -83,6 +83,10 @@ runs:
       run: pip install behave
       shell: bash
 
+    - name: Install Azure SDK for Python
+      run: pip install azure
+      shell: bash
+
     - name: Run Unit Tests and Code Coverage
       run: |
         cd azure_functions
