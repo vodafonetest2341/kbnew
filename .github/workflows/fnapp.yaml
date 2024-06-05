@@ -6,8 +6,6 @@ on:
       - main
       - develop
     paths:
-      - '.github/workflows/build.yaml'
-      - '.github/workflows/deploy.yaml'
       - 'azure_functions'
 
 jobs:
