@@ -108,7 +108,7 @@ runs:
       run: |
         cd azure_functions
         export PYTHONPATH+=";$(pwd)"
-        export KEY_VAULT_URL="${{ inputs.keyVaultUrl }}"
+        export KEY_VAULT_URL="${{ env.KeyVaultUrl }}"
         export FUNCTION_APP_KEY_NAME="function-app-key"
         coverage run --rcfile=.coveragerc -m behave tests --junit --junit-directory ./reports/tabular
         coverage xml -o ./coverage.xml
