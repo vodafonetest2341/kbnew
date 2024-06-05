@@ -120,6 +120,7 @@ class __FunctionResponse__:
             headers={"Content-Type": "application/json"},
         )
 
+
 class __ContainerPath__:
     """
     Represents a container path
