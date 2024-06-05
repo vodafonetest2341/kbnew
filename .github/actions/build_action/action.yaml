@@ -75,6 +75,10 @@ runs:
         pycodestyle tests --ignore=E501,W503,E203
       shell: bash
 
+    - name: Install Coverage
+      run: pip install coverage
+      shell: bash
+
     - name: Run Unit Tests and Code Coverage
       run: |
         cd azure_functions
