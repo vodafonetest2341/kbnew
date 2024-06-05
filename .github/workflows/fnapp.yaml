@@ -37,7 +37,7 @@ jobs:
           fi
 
       - name: Run build and test job
-        uses: ./.github/actions/build-action
+        uses: ./.github/actions/build_action
         if: github.ref == 'refs/heads/main'
 
       #- name: Upload artifact
