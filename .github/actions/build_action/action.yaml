@@ -78,6 +78,10 @@ runs:
     - name: Install Coverage
       run: pip install coverage
       shell: bash
+      
+    - name: Install Behave
+      run: pip install behave
+      shell: bash
 
     - name: Run Unit Tests and Code Coverage
       run: |
