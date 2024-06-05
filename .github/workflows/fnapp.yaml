@@ -20,7 +20,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
             echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
             echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
@@ -38,7 +38,7 @@ jobs:
 
       - name: Run build and test job
         uses: ./.github/actions/build-action
-        if: github.ref == 'refs/heads/develop'
+        if: github.ref == 'refs/heads/main'
 
       #- name: Upload artifact
         #uses: actions/upload-artifact@v2
@@ -51,7 +51,7 @@ jobs:
 
   deploytodev:
     needs: buildandtest
-    if: github.ref == 'refs/heads/develop'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -67,7 +67,7 @@ jobs:
 
       - name: Set environment variables
         run: |
-          if [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
             echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
             echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
             echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
