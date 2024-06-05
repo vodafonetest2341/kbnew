@@ -82,11 +82,15 @@ runs:
     - name: Install Behave
       run: pip install behave
       shell: bash
-
     - name: Install Azure SDK for Python
-      run: pip install azure
+      run: |
+        pip install azure-mgmt-compute
+        pip install azure-mgmt-storage
+        pip install azure-mgmt-resource
+        pip install azure-keyvault-secrets
+        pip install azure-storage-blob
       shell: bash
-
+      
     - name: Run Unit Tests and Code Coverage
       run: |
         cd azure_functions
