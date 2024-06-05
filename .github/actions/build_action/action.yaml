@@ -90,6 +90,10 @@ runs:
         pip install azure-keyvault-secrets
         pip install azure-storage-blob
       shell: bash
+
+    - name: Install azure-identity package
+      run: pip install azure-identity
+      shell: bash
       
     - name: Run Unit Tests and Code Coverage
       run: |
