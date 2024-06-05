@@ -99,8 +99,12 @@ runs:
       run: pip install azure-ai-textanalytics
       shell: bash
 
-    - name: Install other azure-ai packages if needed
-      run: pip install azure-ai-formrecognizer azure-ai-language
+    - name: Install azure-ai-formrecognizer package
+      run: pip install azure-ai-formrecognizer
+      shell: bash
+
+    - name: Install azure-ai-language package if needed
+      run: pip install azure-ai-language
       shell: bash
     
     - name: Run Unit Tests and Code Coverage
