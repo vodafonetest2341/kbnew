@@ -219,7 +219,6 @@ class __SearchManager__:
             documents,
         )
         return __response
-    
 
     def _remove_content(self, sourcefile):
         with self.search_info.create_search_client() as search_client:
@@ -227,14 +226,14 @@ class __SearchManager__:
             if sourcefile is not None:
                 _filter = f"sourcefile eq '{sourcefile}'"
 
-            _search_documents = search_client.search(search_text="", filter=_filter,include_total_count=True)
+            _search_documents = search_client.search(search_text="", filter=_filter, include_total_count=True)
 
             if _search_documents.get_count() > 0:
                 _documents_to_remove = []
                 for document in _search_documents:
-                    _documents_to_remove.append({"id":document['id']})
+                    _documents_to_remove.append({"id": document['id']})
 
-                _removed_docs  = search_client.delete_documents(_documents_to_remove)
+                _removed_docs = search_client.delete_documents(_documents_to_remove)
                 return len(_removed_docs)
             else:
                 return 0
