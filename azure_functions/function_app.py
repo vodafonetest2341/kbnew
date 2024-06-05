@@ -142,6 +142,7 @@ def createIndexes(req: func.HttpRequest) -> func.HttpResponse:
             "Document has not been processed, input containerFilePath is missing", status_code=404
         )
 
+
 # Remove documents from Knowledgebase indexes
 @app.route(
     route="removeContent", auth_level=func.AuthLevel.FUNCTION, methods=["GET", "POST"]
