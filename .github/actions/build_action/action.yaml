@@ -45,6 +45,11 @@ runs:
         # pip3 install -r requirements.txt
       shell: bash
 
+    - name: Install Bandit
+      run: |
+        pip install bandit
+      shell: bash
+
     - name: Run Bandit Checks
       run: |
         cd azure_functions
