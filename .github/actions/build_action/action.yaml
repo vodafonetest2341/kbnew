@@ -59,6 +59,11 @@ runs:
         bandit -r tests --skip B101 # skip assert checks in the tests folder
       shell: bash
 
+    - name: Install pycodestyle
+      run: |
+        pip install pycodestyle
+      shell: bash
+
     - name: Run PyCodeStyle Checks
       run: |
         cd azure_functions
