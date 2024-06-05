@@ -1,141 +1,40 @@
-name: Build and Deploy Function App
+import azure.functions as func
+import logging
+import sys
+from azure.monitor.opentelemetry.exporter import AzureMonitorTraceExporter
+from helpers.orchestrator import Orchestrator
 
-on:
-  workflow_dispatch:
-  push:
-    branches:
-      - main
-      - develop
-    paths:
-      - '.github/workflows/build.yaml'
-      - '.github/workflows/deploy.yaml'
-      - 'azure_functions'
 
-jobs:
-  buildandtest:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+# Set up logging
+logging.basicConfig(filename='app.log', level=logging.INFO,
+                    format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+logging.getLogger('azure.core.pipeline.policies.http_logging_policy').setLevel(logging.WARNING)
 
-      - name: Set environment variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
-            echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
-            echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
-            echo "KeyVaultUrl=https://kv-vf-grp-oai-aib-kv-02.vault.azure.net/" >> $GITHUB_ENV
-            echo "DockerRegistryServiceConnection=aib-refbuild-con-reg" >> $GITHUB_ENV
-            echo "DockerImageRepository=ragkbfunctionapp" >> $GITHUB_ENV
-            echo "DockerFilePath=./azure_functions/Dockerfile" >> $GITHUB_ENV
-            echo "ContainerRegistryName=crvfgrpoaiaibdecr000001" >> $GITHUB_ENV
-            echo "AzureSQLServerName=srv-vf-grp-oai-aib-de-srvsql-01.database.windows.net" >> $GITHUB_ENV
-            echo "AzureSQLServerDBName=sql-vf-grp-oai-aid-sql" >> $GITHUB_ENV
-            echo "LandingAreaName=savfgrpoaiaibdesa000002" >> $GITHUB_ENV
-            echo "DataFactoryName=df-vf-grp-oai-aib-de-df" >> $GITHUB_ENV
-            # Add the rest of the dev variables here
-          fi
 
-      - name: Run build and test job
-        uses: ./.github/actions/build_action
-        if: github.ref == 'refs/heads/main'
+app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
-      #- name: Upload artifact
-        #uses: actions/upload-artifact@v2
-        #with:
-          #name: build-artifact
-          #path: ${{ github.workspace }}/build-artifact
 
-      - name: Save build artifacts
-        run: cp -r build-artifact /opt/az/artifact
+@app.route(route="getContent", methods=['GET'])
+def getContent(req: func.HttpRequest) -> func.HttpResponse:
+    # Set global TracerProvider before instrumenting
+    container_path = req.params.get('containerFilePath')
+    if not container_path:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            container_path = req_body.get('containerPath')
 
-  deploytodev:
-    needs: buildandtest
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Load build artifacts
-        run: cp -r /opt/az/artifact build-artifact
-
-      #- name: Download artifact
-        #uses: actions/download-artifact@v2
-        #with:
-          #name: build-artifact
-
-      - name: Set environment variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "EnvironmentToDeploy=dev" >> $GITHUB_ENV
-            echo "ResourceGroupName=rg-vf-grp-oai-aib-de" >> $GITHUB_ENV
-            echo "FunctionAppName=af-vf-grp-oai-aib-de-af-01" >> $GITHUB_ENV
-            echo "KeyVaultUrl=https://kv-vf-grp-oai-aib-kv-02.vault.azure.net/" >> $GITHUB_ENV
-            echo "DockerRegistryServiceConnection=aib-refbuild-con-reg" >> $GITHUB_ENV
-            echo "DockerImageRepository=ragkbfunctionapp" >> $GITHUB_ENV
-            echo "DockerFilePath=./azure_functions/Dockerfile" >> $GITHUB_ENV
-            echo "ContainerRegistryName=crvfgrpoaiaibdecr000001" >> $GITHUB_ENV
-            echo "AzureSQLServerName=srv-vf-grp-oai-aib-de-srvsql-01.database.windows.net" >> $GITHUB_ENV
-            echo "AzureSQLServerDBName=sql-vf-grp-oai-aid-sql" >> $GITHUB_ENV
-            echo "LandingAreaName=savfgrpoaiaibdesa000002" >> $GITHUB_ENV
-            echo "DataFactoryName=df-vf-grp-oai-aib-de-df" >> $GITHUB_ENV
-            # Add the rest of the dev variables here
-          fi
-
-      - name: Run deploy to dev job
-        uses: ./.github/actions/deploy-action
-
-  deploytotst:
-    needs: buildandtest
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Load build artifacts
-        run: cp -r /opt/az/artifact build-artifact
-
-      #- name: Download artifact
-        #uses: actions/download-artifact@v2
-        #with:
-          #name: build-artifact
-
-      - name: Set environment variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "EnvironmentToDeploy=tst" >> $GITHUB_ENV
-            echo "ResourceGroupName=rg-vf-grp-oai-aib-tst" >> $GITHUB_ENV
-            # Add the rest of the tst variables here
-          fi
-
-      - name: Run deploy to tst job
-        uses: ./.github/actions/deploy-action
-
-  deploytoprd:
-    needs: deploytotst
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-     
-      - name: Load build artifacts
-        run: cp -r /opt/az/artifact build-artifact
-
-      #- name: Download artifact
-        #uses: actions/download-artifact@v2
-        #with:
-          #name: build-artifact
-
-      - name: Set environment variables
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "EnvironmentToDeploy=prd" >> $GITHUB_ENV
-            echo "ResourceGroupName=rg-vf-grp-oai-aib-prd" >> $GITHUB_ENV
-            # Add the rest of the prd variables here
-          fi
-
-      - name: Run deploy to prd job
-        uses: ./.github/actions/deploy-action
+    if container_path:
+        try:
+            _orchestrator = Orchestrator(
+                container_path=container_path,
+            )
+            _orchestrator.process_documents()
+        except Exception as e:
+            logging.error(str(e))
+            return func.HttpResponse("Document has not been processed", status_code=404)
+    else:
+        return func.HttpResponse("No document found for the provided input field.", status_code=404)
